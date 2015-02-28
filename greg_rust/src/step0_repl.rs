@@ -12,11 +12,15 @@ fn print(output: &str) -> &str {
     output
 }
 
+fn rep(input: &str) -> &str {
+    print(eval(read(input)))
+}
+
 fn main() {
     loop {
         match readline::readline("user> ") {
             Some(line) => {
-                println!("{}", print(eval(read(&line))));
+                println!("{}", rep(&line));
                 readline::add_history(&line);
             },
             None => return

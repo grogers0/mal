@@ -1,4 +1,5 @@
 use types::LispType;
+use types::LispType::*;
 use std::result::Result;
 
 #[derive(Debug)]
@@ -15,19 +16,27 @@ impl Reader {
         Reader { tokens: tokens, position: 0 }
     }
 
-    fn peek(&self) -> &str {
-        &self.tokens[self.position]
+    fn peek(&self) -> Result<&str, ParseError> {
+        if self.position < self.tokens.len() {
+            Ok(&self.tokens[self.position])
+        } else {
+            Err(ParseError("expected more input but got EOF".to_string()))
+        }
     }
 
-    fn next(&mut self) -> &str {
-        let token = &self.tokens[self.position];
-        self.position += 1;
-        token
+    fn next(&mut self) -> Result<&str, ParseError> {
+        if self.position < self.tokens.len() {
+            let token = &self.tokens[self.position];
+            self.position += 1;
+            Ok(token)
+        } else {
+            Err(ParseError("expected more input but got EOF".to_string()))
+        }
     }
 }
 
 fn tokenize(input: &str) -> Vec<String> {
-    let re = regex!(r#"[\s,]*(~@|[\[\]{}()'`~^@]|"(?:\\.|[^\\"])*"|;.*|[^\t\n\v\f\r \[\]{}('"`,;)]*)"#);
+    let re = regex!(r#"[\s,]*(~@|[\[\]{}()'`~^@]|"(?:\\.|[^\\"])*"|;.*|[^\t\n\v\f\r \[\]{}('"`,;)]+)"#);
     let mut tokens = Vec::new();
 
     for cap in re.captures_iter(input) {
@@ -38,35 +47,42 @@ fn tokenize(input: &str) -> Vec<String> {
 }
 
 pub fn read_str(input: &str) -> ParseResult {
-    let mut reader = Reader::new(tokenize(input));
+    let tokens = tokenize(input);
+    let mut reader = Reader::new(tokens);
     read_form(&mut reader)
 }
 
 fn read_form(reader: &mut Reader) -> ParseResult {
-    match reader.peek() {
+    match try!(reader.peek()) {
         "(" => read_list(reader),
         _ => read_atom(reader)
     }
 }
 
 fn read_list(reader: &mut Reader) -> ParseResult {
-    reader.next(); // skip the opening "("
+    reader.next().unwrap(); // skip the opening "("
 
     let mut list = Vec::new();
-    while reader.peek() != ")" {
+    while try!(reader.peek()) != ")" {
         list.push(try!(read_form(reader)));
     }
 
-    reader.next(); // skip the trailing ")"
+    reader.next().unwrap(); // skip the trailing ")"
 
-    Ok(LispType::List(list))
+    Ok(List(list))
 }
 
 fn read_atom(reader: &mut Reader) -> ParseResult {
-    let token = reader.next();
-    if let Ok(int) = token.parse::<i64>() {
-        Ok(LispType::Integer(int))
+    let token = try!(reader.next());
+    if token == "nil" {
+        Ok(Nil)
+    } else if token == "true" {
+        Ok(True)
+    } else if token == "false" {
+        Ok(False)
+    } else if let Ok(int) = token.parse::<i64>() {
+        Ok(Integer(int))
     } else {
-        Ok(LispType::Symbol(token.to_string()))
+        Ok(Symbol(token.to_string()))
     }
 }
