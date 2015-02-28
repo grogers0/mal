@@ -1,0 +1,7 @@
+[package]
+name = "mal"
+version = "0.0.1"
+authors = ["Greg Rogers <greg.r.rogers@gmail.com>"]
+
+[[bin]]
+name = "step0_repl"
