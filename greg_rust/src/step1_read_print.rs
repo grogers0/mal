@@ -1,8 +1,8 @@
-#![feature(core, old_io, plugin)]
+#![feature(core, plugin)]
 #![plugin(regex_macros)]
 extern crate regex;
+extern crate readline;
 
-use std::old_io;
 use types::LispType;
 
 mod reader;
@@ -22,10 +22,12 @@ fn print(value: LispType) -> String {
 
 fn main() {
     loop {
-        print!("user> ");
-        match old_io::stdin().read_line() {
-            Ok(line) => println!("{}", print(eval(read(&line)))),
-            Err(_) => return
+        match readline::readline("user> ") {
+            Some(line) => {
+                println!("{}", print(eval(read(&line))));
+                readline::add_history(&line);
+            },
+            None => return
         }
     }
 }

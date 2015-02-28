@@ -11,3 +11,4 @@ name = "step1_read_print"
 [dependencies]
 regex = "*"
 regex_macros = "*"
+readline = "*"

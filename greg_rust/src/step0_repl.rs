@@ -1,24 +1,25 @@
-#![feature(old_io)]
-use std::old_io;
+extern crate readline;
 
-fn read(input: String) -> String {
+fn read(input: &str) -> &str {
     input
 }
 
-fn eval(ast: String) -> String {
+fn eval(ast: &str) -> &str {
     ast
 }
 
-fn print(output: String) -> String {
+fn print(output: &str) -> &str {
     output
 }
 
 fn main() {
     loop {
-        print!("user> ");
-        match old_io::stdin().read_line() {
-            Ok(line) => println!("{}", print(eval(read(line)))),
-            Err(_) => return
+        match readline::readline("user> ") {
+            Some(line) => {
+                println!("{}", print(eval(read(&line))));
+                readline::add_history(&line);
+            },
+            None => return
         }
     }
 }
