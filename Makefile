@@ -76,7 +76,7 @@ ruby_STEP_TO_PROG =    ruby/$($(1)).rb
 rust_STEP_TO_PROG =    rust/target/$($(1))
 scala_STEP_TO_PROG =   scala/$($(1)).scala
 vb_STEP_TO_PROG =      vb/$($(1)).exe
-greg_rust_STEP_TP_PROG = greg_rust/target/$($(1))
+greg_rust_STEP_TO_PROG = greg_rust/target/$($(1))
 
 # Needed some argument munging
 COMMA = ,

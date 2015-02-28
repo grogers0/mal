@@ -27,7 +27,7 @@ impl Reader {
 }
 
 fn tokenize(input: &str) -> Vec<String> {
-    let re = regex!(r#"[\s,]*([()]|\w+)"#);
+    let re = regex!(r#"[\s,]*(~@|[\[\]{}()'`~^@]|"(?:\\.|[^\\"])*"|;.*|[^\t\n\v\f\r \[\]{}('"`,;)]*)"#);
     let mut tokens = Vec::new();
 
     for cap in re.captures_iter(input) {
