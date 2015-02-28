@@ -15,7 +15,7 @@ fn print(output: String) -> String {
 
 fn main() {
     loop {
-        print!("prompt> ");
+        print!("user> ");
         match old_io::stdin().read_line() {
             Ok(line) => println!("{}", print(eval(read(line)))),
             Err(_) => return

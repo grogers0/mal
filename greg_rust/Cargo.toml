@@ -5,3 +5,9 @@ authors = ["Greg Rogers <greg.r.rogers@gmail.com>"]
 
 [[bin]]
 name = "step0_repl"
+[[bin]]
+name = "step1_read_print"
+
+[dependencies]
+regex = "*"
+regex_macros = "*"
