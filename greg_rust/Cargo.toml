@@ -7,6 +7,8 @@ authors = ["Greg Rogers <greg.r.rogers@gmail.com>"]
 name = "step0_repl"
 [[bin]]
 name = "step1_read_print"
+[[bin]]
+name = "step2_eval"
 
 [dependencies]
 regex = "*"
