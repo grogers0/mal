@@ -15,7 +15,22 @@ pub enum LispType {
     Integer(i64),
     Symbol(String),
     List(Vec<LispType>),
-    Func(fn(Vec<LispType>) -> Result<LispType, LispError>)
+    Func(fn(Vec<LispType>) -> LispResult)
+}
+
+impl PartialEq for LispType {
+    fn eq(&self, other: &LispType) -> bool {
+        match (self, other) {
+            (&Nil, &Nil) => true,
+            (&True, &True) => true,
+            (&False, &False) => true,
+            (&Integer(ref a), &Integer(ref b)) if a == b => true,
+            (&Symbol(ref a), &Symbol(ref b)) if a == b => true,
+            (&List(ref a), &List(ref b)) if a == b => true,
+            // Functions are not comparable
+            _ => false
+        }
+    }
 }
 
 impl fmt::Display for LispType {

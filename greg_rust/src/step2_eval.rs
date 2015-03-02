@@ -15,9 +15,9 @@ fn read(input: &str) -> reader::ParseResult {
     reader::read_str(input)
 }
 
-fn eval_ast(ast: LispType, env: &Environment) -> LispResult {
+fn eval_ast(ast: LispType, env: &mut Environment) -> LispResult {
     match ast {
-        Symbol(sym) => env.lookup_symbol(&sym),
+        Symbol(sym) => env.get(&sym),
         List(values) => {
             let mut evalues = Vec::with_capacity(values.len());
             for val in values.into_iter() {
@@ -29,7 +29,7 @@ fn eval_ast(ast: LispType, env: &Environment) -> LispResult {
     }
 }
 
-fn eval(ast: LispType, env: &Environment) -> LispResult {
+fn eval(ast: LispType, env: &mut Environment) -> LispResult {
     if let List(values) = ast {
         match try!(eval_ast(List(values), env)) {
             List(mut values) => {
@@ -37,10 +37,9 @@ fn eval(ast: LispType, env: &Environment) -> LispResult {
                     return Err(LispError("tried to evaluate a list with no function".to_string()))
                 }
                 let args = values.split_off(1);
-                if let Func(func) = values[0] {
-                    func(args)
-                } else {
-                    return Err(LispError(format!("{} is not a function, cannot evaluate it", values[0])))
+                match values[0] {
+                    Func(func) => func(args),
+                    ref misunderstood => return Err(LispError(format!("{} is not a function, cannot evaluate it", misunderstood)))
                 }
             },
             _ => unreachable!()
@@ -58,7 +57,7 @@ fn rep(input: &str) -> String {
     match read(input) {
         Err(err) => format!("error: {:?}", err),
         Ok(ast) => {
-            match eval(ast, &Environment::new()) {
+            match eval(ast, &mut Environment::with_numerics()) {
                 Err(err) => format!("error: {:?}", err),
                 Ok(ast) => print(ast)
             }

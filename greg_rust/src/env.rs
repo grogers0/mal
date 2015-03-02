@@ -3,26 +3,36 @@ use std::collections::HashMap;
 use types::{LispType, LispError, LispResult};
 use types::LispType::*;
 
-pub struct Environment {
-    symbols: HashMap<String, LispType>
+pub struct Environment<'a> {
+    symbols: HashMap<String, LispType>,
+    outer_env: Option<&'a Environment<'a>>
 }
-impl Environment {
-    pub fn lookup_symbol(&self, symbol: &str) -> LispResult {
+impl<'a> Environment<'a> {
+    pub fn set(&mut self, symbol: &str, value: LispType) {
+        self.symbols.insert(symbol.to_string(), value);
+    }
+
+    pub fn get(&self, symbol: &str) -> LispResult {
         if let Some(value) = self.symbols.get(symbol) {
             Ok(value.clone())
+        } else if let Some(ref env) = self.outer_env {
+            env.get(symbol)
         } else {
             Err(LispError(format!("{} not found", symbol)))
         }
     }
 
-    pub fn new() -> Environment {
-        let mut symbols = HashMap::new();
-        symbols.insert("+".to_string(), Func(add));
-        symbols.insert("-".to_string(), Func(sub));
-        symbols.insert("*".to_string(), Func(mul));
-        symbols.insert("/".to_string(), Func(div));
+    pub fn new(outer_env: Option<&'a Environment>) -> Environment<'a> {
+        Environment { symbols: HashMap::new(), outer_env: outer_env }
+    }
 
-        Environment { symbols: symbols }
+    pub fn with_numerics() -> Environment<'a> {
+        let mut env = Environment::new(None);
+        env.set("+", Func(add));
+        env.set("-", Func(sub));
+        env.set("*", Func(mul));
+        env.set("/", Func(div));
+        env
     }
 }
 
