@@ -1,3 +1,4 @@
+use types;
 use types::{LispType, LispResult, LispError};
 use types::LispType::*;
 use env::Environment;
@@ -20,6 +21,11 @@ pub fn default_environment<'a>() -> Environment<'a> {
     env.set("<=", Func(le));
     env.set(">", Func(gt));
     env.set(">=", Func(ge));
+
+    env.set("pr-str", Func(pr_str));
+    env.set("str", Func(str));
+    env.set("prn", Func(prn));
+    env.set("println", Func(println));
 
     env
 }
@@ -113,4 +119,47 @@ fn lt(args: Vec<LispType>) -> LispResult { binary_bool_op(|a:i64, b:i64| { a < b
 fn le(args: Vec<LispType>) -> LispResult { binary_bool_op(|a:i64, b:i64| { a <= b }, args) }
 fn gt(args: Vec<LispType>) -> LispResult { binary_bool_op(|a:i64, b:i64| { a > b }, args) }
 fn ge(args: Vec<LispType>) -> LispResult { binary_bool_op(|a:i64, b:i64| { a >= b }, args) }
+
+fn pr_str(args: Vec<LispType>) -> LispResult {
+    let mut buf = String::new();
+    for (i, v) in args.iter().enumerate() {
+        if i != 0 {
+            buf.push(' ');
+        }
+        buf.push_str(&types::pr_str(v, true));
+    }
+    Ok(Str(buf))
+}
+
+fn str(args: Vec<LispType>) -> LispResult {
+    let mut buf = String::new();
+    for v in args.iter() {
+        buf.push_str(&types::pr_str(v, false));
+    }
+    Ok(Str(buf))
+}
+
+fn prn(args: Vec<LispType>) -> LispResult {
+    let mut buf = String::new();
+    for (i, v) in args.iter().enumerate() {
+        if i != 0 {
+            buf.push(' ');
+        }
+        buf.push_str(&types::pr_str(v, true));
+    }
+    println!("{}", buf);
+    Ok(Nil)
+}
+
+fn println(args: Vec<LispType>) -> LispResult {
+    let mut buf = String::new();
+    for (i, v) in args.iter().enumerate() {
+        if i != 0 {
+            buf.push(' ');
+        }
+        buf.push_str(&types::pr_str(v, false));
+    }
+    println!("{}", buf);
+    Ok(Nil)
+}
 

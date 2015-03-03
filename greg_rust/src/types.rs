@@ -39,35 +39,43 @@ impl PartialEq for LispType {
 
 impl fmt::Display for LispType {
     fn fmt(&self, out: &mut fmt::Formatter) -> fmt::Result {
-        match self {
-            &Nil => out.write_str("nil"),
-            &True => out.write_str("true"),
-            &False => out.write_str("false"),
-            &Integer(int) => int.fmt(out),
-            &Symbol(ref sym) => sym.fmt(out),
-            &Str(ref s) => out.write_str(s), // quotes are included
-            &List(ref elems) => {
-                try!(out.write_str("("));
-                for (i, v) in elems.iter().enumerate() {
-                    if i != 0 {
-                        try!(out.write_str(" "));
-                    }
-                    try!(v.fmt(out));
+        out.write_str(&pr_str(self, false))
+    }
+}
+
+pub fn pr_str(val: &LispType, print_readably: bool) -> String {
+    match val {
+        &Nil => "nil".to_string(),
+        &True => "true".to_string(),
+        &False => "false".to_string(),
+        &Integer(int) => int.to_string(),
+        &Symbol(ref sym) => sym.clone(),
+        &Str(ref s) => s.clone(), // quotes are included
+        &List(ref elems) => {
+            let mut buf = String::new();
+            buf.push('(');
+            for (i, v) in elems.iter().enumerate() {
+                if i != 0 {
+                    buf.push(' ');
                 }
-                out.write_str(")")
-            },
-            &Vector(ref elems) => {
-                try!(out.write_str("["));
-                for (i, v) in elems.iter().enumerate() {
-                    if i != 0 {
-                        try!(out.write_str(" "));
-                    }
-                    try!(v.fmt(out));
+                buf.push_str(&pr_str(v, print_readably));
+            }
+            buf.push(')');
+            buf
+        },
+        &Vector(ref elems) => {
+            let mut buf = String::new();
+            buf.push('[');
+            for (i, v) in elems.iter().enumerate() {
+                if i != 0 {
+                    buf.push(' ');
                 }
-                out.write_str("]")
-            },
-            &Func(_) => out.write_str("#<function ...>"),
-            &Closure(_,_) => out.write_str("#<function ...>")
-        }
+                buf.push_str(&pr_str(v, print_readably));
+            }
+            buf.push(']');
+            buf
+        },
+        &Func(_) => "#<function ...>".to_string(),
+        &Closure(_,_) => "#<function ...>".to_string()
     }
 }

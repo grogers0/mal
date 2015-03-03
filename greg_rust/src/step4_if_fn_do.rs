@@ -108,6 +108,7 @@ fn eval(ast: LispType, env: &mut Environment) -> LispResult {
                 _ => Err(LispError("fn* must be called with a binding list and an expression".to_string()))
             }
         } else if let List(maybe_fn_def) = arg0 {
+            // FIXME
             let arg0 = try!(eval(List(maybe_fn_def), env));
             let mut resolved_args = Vec::with_capacity(1 + args.len());
             resolved_args.push(arg0);
