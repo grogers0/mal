@@ -67,15 +67,54 @@ fn eval(ast: LispType, env: &mut Environment) -> LispResult {
         } else if arg0 == Symbol("let*".to_string()) {
             let mut let_env = Environment::new(Some(env));
             let mut args_iter = args.into_iter();
-            if let Some(List(bindings)) = args_iter.next() {
-                try!(set_bindings(bindings, &mut let_env));
-                match args_iter.next() {
-                    Some(val) => eval(val, &mut let_env),
-                    None => Err(LispError("let* must be called with a second argument to evaluate".to_string()))
+            match (args_iter.next(), args_iter.next(), args_iter.next()) {
+                (Some(List(bindings)), Some(val), None) | (Some(Vector(bindings)), Some(val), None) => {
+                    try!(set_bindings(bindings, &mut let_env));
+                    eval(val, &mut let_env)
+                },
+                _ => Err(LispError("let* must be called with a list/vector of bindings and an expression to evaluate".to_string()))
+            }
+        } else if arg0 == Symbol("do".to_string()) {
+            let mut ret = Nil;
+            for arg in args.into_iter() {
+                ret = try!(eval(arg, env));
+            }
+            Ok(ret)
+        } else if arg0 == Symbol("if".to_string()) {
+            let mut args_iter = args.into_iter();
+            if let Some(cond) = args_iter.next() {
+                let cond = try!(eval(cond, env));
+                if cond == Nil || cond == False {
+                    args_iter.next(); // Skip the second parameter
+                    match args_iter.next() {
+                        Some(val) => eval(val, env),
+                        None => Ok(Nil)
+                    }
+                } else {
+                    match args_iter.next() {
+                        Some(val) => eval(val, env),
+                        None => Err(LispError("if must be called with at least two arguments".to_string()))
+                    }
                 }
             } else {
-                Err(LispError("let* must be called with a list of bindings as the first argument".to_string()))
+                Err(LispError("if must be called with at least two arguments".to_string()))
             }
+        } else if arg0 == Symbol("fn*".to_string()) {
+            let mut args_iter = args.into_iter();
+            match (args_iter.next(), args_iter.next(), args_iter.next()) {
+                (Some(List(args)), Some(val), None) | (Some(Vector(args)), Some(val), None) => {
+                    Ok(Closure(args, Box::new(val)))
+                },
+                _ => Err(LispError("fn* must be called with a binding list and an expression".to_string()))
+            }
+        } else if let List(maybe_fn_def) = arg0 {
+            let arg0 = try!(eval(List(maybe_fn_def), env));
+            let mut resolved_args = Vec::with_capacity(1 + args.len());
+            resolved_args.push(arg0);
+            for arg in args {
+                resolved_args.push(arg)
+            }
+            eval(List(resolved_args), env)
         } else {
             match try!(eval_ast(arg0, env)) {
                 Func(func) => {
@@ -84,6 +123,10 @@ fn eval(ast: LispType, env: &mut Environment) -> LispResult {
                     } else {
                         unreachable!()
                     }
+                },
+                Closure(bindings, expr) => {
+                    let mut env = try!(Environment::with_bindings(Some(env), bindings, args));
+                    eval(*expr, &mut env)
                 },
                 misunderstood => return Err(LispError(format!("{} is not a function, cannot evaluate it", misunderstood)))
             }

@@ -10,6 +10,7 @@ use env::Environment;
 mod reader;
 mod types;
 mod env;
+mod core;
 
 fn read(input: &str) -> reader::ParseResult {
     reader::read_str(input)
@@ -57,7 +58,7 @@ fn rep(input: &str) -> String {
     match read(input) {
         Err(err) => format!("error: {:?}", err),
         Ok(ast) => {
-            match eval(ast, &mut Environment::with_numerics()) {
+            match eval(ast, &mut core::default_environment()) {
                 Err(err) => format!("error: {:?}", err),
                 Ok(ast) => print(ast)
             }

@@ -1,3 +1,5 @@
+#![allow(dead_code)]
+
 use std::collections::HashMap;
 
 use types::{LispType, LispError, LispResult};
@@ -26,34 +28,19 @@ impl<'a> Environment<'a> {
         Environment { symbols: HashMap::new(), outer_env: outer_env }
     }
 
-    pub fn with_numerics() -> Environment<'a> {
-        let mut env = Environment::new(None);
-        env.set("+", Func(add));
-        env.set("-", Func(sub));
-        env.set("*", Func(mul));
-        env.set("/", Func(div));
-        env
-    }
-}
-
-fn binary_int_op<F: Fn(i64,i64) -> i64>(f: F, args: Vec<LispType>) -> LispResult {
-    if args.len() != 2 {
-        return Err(LispError(format!("binary function called with {} arguments", args.len())))
-    }
-
-    if let Integer(a) = args[0] {
-        if let Integer(b) = args[1] {
-            Ok(Integer(f(a, b)))
-        } else {
-            return Err(LispError(format!("illegal argument: {} to function which expects integers", args[1])))
+    pub fn with_bindings(outer_env: Option<&'a Environment>, binds: Vec<LispType>, exprs: Vec<LispType>) -> Result<Environment<'a>, LispError> {
+        let mut symbols = HashMap::with_capacity(binds.len());
+        if binds.len() != exprs.len() {
+            return Err(LispError("incorrect number of arguments passed to a closure".to_string()))
         }
-    } else {
-        return Err(LispError(format!("illegal argument: {} to function which expects integers", args[1])))
+        for (bind, value) in binds.into_iter().zip(exprs.into_iter()) {
+            if let Symbol(sym) = bind {
+                symbols.insert(sym, value);
+            } else {
+                return Err(LispError("function binding is not a symbol".to_string()))
+            }
+        }
+
+        Ok(Environment { symbols: symbols, outer_env: outer_env })
     }
 }
-
-fn add(args: Vec<LispType>) -> LispResult { binary_int_op(|a:i64, b:i64| { a + b }, args) }
-fn sub(args: Vec<LispType>) -> LispResult { binary_int_op(|a:i64, b:i64| { a - b }, args) }
-fn mul(args: Vec<LispType>) -> LispResult { binary_int_op(|a:i64, b:i64| { a * b }, args) }
-fn div(args: Vec<LispType>) -> LispResult { binary_int_op(|a:i64, b:i64| { a / b }, args) }
-

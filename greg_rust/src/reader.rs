@@ -55,6 +55,7 @@ pub fn read_str(input: &str) -> ParseResult {
 fn read_form(reader: &mut Reader) -> ParseResult {
     match try!(reader.peek()) {
         "(" => read_list(reader),
+        "[" => read_vector(reader),
         _ => read_atom(reader)
     }
 }
@@ -62,14 +63,27 @@ fn read_form(reader: &mut Reader) -> ParseResult {
 fn read_list(reader: &mut Reader) -> ParseResult {
     reader.next().unwrap(); // skip the opening "("
 
-    let mut list = Vec::new();
+    let mut elems = Vec::new();
     while try!(reader.peek()) != ")" {
-        list.push(try!(read_form(reader)));
+        elems.push(try!(read_form(reader)));
     }
 
     reader.next().unwrap(); // skip the trailing ")"
 
-    Ok(List(list))
+    Ok(List(elems))
+}
+
+fn read_vector(reader: &mut Reader) -> ParseResult {
+    reader.next().unwrap(); // skip the opening "["
+
+    let mut elems = Vec::new();
+    while try!(reader.peek()) != "]" {
+        elems.push(try!(read_form(reader)));
+    }
+
+    reader.next().unwrap(); // skip the trailing "]"
+
+    Ok(Vector(elems))
 }
 
 fn read_atom(reader: &mut Reader) -> ParseResult {
@@ -82,6 +96,8 @@ fn read_atom(reader: &mut Reader) -> ParseResult {
         Ok(False)
     } else if let Ok(int) = token.parse::<i64>() {
         Ok(Integer(int))
+    } else if let Some('"') = token.chars().next() {
+        Ok(Str(token.to_string()))
     } else {
         Ok(Symbol(token.to_string()))
     }

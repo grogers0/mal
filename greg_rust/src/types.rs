@@ -14,8 +14,11 @@ pub enum LispType {
     False,
     Integer(i64),
     Symbol(String),
+    Str(String),
     List(Vec<LispType>),
-    Func(fn(Vec<LispType>) -> LispResult)
+    Vector(Vec<LispType>),
+    Func(fn(Vec<LispType>) -> LispResult),
+    Closure(Vec<LispType>, Box<LispType>)
 }
 
 impl PartialEq for LispType {
@@ -26,6 +29,7 @@ impl PartialEq for LispType {
             (&False, &False) => true,
             (&Integer(ref a), &Integer(ref b)) if a == b => true,
             (&Symbol(ref a), &Symbol(ref b)) if a == b => true,
+            (&Str(ref a), &Str(ref b)) if a == b => true,
             (&List(ref a), &List(ref b)) if a == b => true,
             // Functions are not comparable
             _ => false
@@ -41,9 +45,10 @@ impl fmt::Display for LispType {
             &False => out.write_str("false"),
             &Integer(int) => int.fmt(out),
             &Symbol(ref sym) => sym.fmt(out),
-            &List(ref list) => {
+            &Str(ref s) => out.write_str(s), // quotes are included
+            &List(ref elems) => {
                 try!(out.write_str("("));
-                for (i, v) in list.iter().enumerate() {
+                for (i, v) in elems.iter().enumerate() {
                     if i != 0 {
                         try!(out.write_str(" "));
                     }
@@ -51,7 +56,18 @@ impl fmt::Display for LispType {
                 }
                 out.write_str(")")
             },
-            &Func(_) => out.write_str("#<function ...>")
+            &Vector(ref elems) => {
+                try!(out.write_str("["));
+                for (i, v) in elems.iter().enumerate() {
+                    if i != 0 {
+                        try!(out.write_str(" "));
+                    }
+                    try!(v.fmt(out));
+                }
+                out.write_str("]")
+            },
+            &Func(_) => out.write_str("#<function ...>"),
+            &Closure(_,_) => out.write_str("#<function ...>")
         }
     }
 }
