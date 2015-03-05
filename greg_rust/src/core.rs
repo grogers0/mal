@@ -1,10 +1,11 @@
+use std::rc::Rc;
 use types;
 use types::{LispType, LispResult, LispError};
 use types::LispType::*;
 use env::Environment;
 
-pub fn default_environment() -> Environment {
-    let mut env = Environment::new(None);
+pub fn default_environment() -> Rc<Environment> {
+    let env = Environment::new(None);
     env.set("+", Func(add));
     env.set("-", Func(sub));
     env.set("*", Func(mul));
@@ -27,7 +28,7 @@ pub fn default_environment() -> Environment {
     env.set("prn", Func(prn));
     env.set("println", Func(println));
 
-    env
+    Rc::new(env)
 }
 
 fn binary_int_op<F: Fn(i64,i64) -> i64>(f: F, args: Vec<LispType>) -> LispResult {

@@ -3,6 +3,8 @@
 extern crate regex;
 extern crate readline;
 
+use std::rc::Rc;
+
 use types::{LispType, LispError, LispResult};
 use types::LispType::*;
 use env::Environment;
@@ -16,13 +18,13 @@ fn read(input: &str) -> reader::ParseResult {
     reader::read_str(input)
 }
 
-fn eval_ast(ast: LispType, env: &mut Environment) -> LispResult {
+fn eval_ast(ast: LispType, env: Rc<Environment>) -> LispResult {
     match ast {
         Symbol(sym) => env.get(&sym),
         List(values) => {
             let mut evalues = Vec::with_capacity(values.len());
             for val in values.into_iter() {
-                evalues.push(try!(eval(val, env)))
+                evalues.push(try!(eval(val, env.clone())))
             }
             Ok(List(evalues))
         }
@@ -30,7 +32,7 @@ fn eval_ast(ast: LispType, env: &mut Environment) -> LispResult {
     }
 }
 
-fn eval(ast: LispType, env: &mut Environment) -> LispResult {
+fn eval(ast: LispType, env: Rc<Environment>) -> LispResult {
     if let List(values) = ast {
         match try!(eval_ast(List(values), env)) {
             List(mut values) => {
@@ -58,7 +60,7 @@ fn rep(input: &str) -> String {
     match read(input) {
         Err(err) => format!("error: {:?}", err),
         Ok(ast) => {
-            match eval(ast, &mut core::default_environment()) {
+            match eval(ast, core::default_environment()) {
                 Err(err) => format!("error: {:?}", err),
                 Ok(ast) => print(ast)
             }

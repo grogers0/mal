@@ -1,23 +1,24 @@
 #![allow(dead_code)]
-
 use std::collections::HashMap;
 use std::iter::FromIterator;
+use std::rc::Rc;
+use std::cell::RefCell;
 
 use types::{LispType, LispError, LispResult};
 use types::LispType::*;
 
 #[derive(Debug, Clone)]
 pub struct Environment {
-    symbols: HashMap<String, LispType>,
-    outer_env: Option<Box<Environment>>
+    symbols: RefCell<HashMap<String, LispType>>,
+    outer_env: Option<Rc<Environment>>
 }
 impl Environment {
-    pub fn set(&mut self, symbol: &str, value: LispType) {
-        self.symbols.insert(symbol.to_string(), value);
+    pub fn set(&self, symbol: &str, value: LispType) {
+        self.symbols.borrow_mut().insert(symbol.to_string(), value);
     }
 
     pub fn get(&self, symbol: &str) -> LispResult {
-        if let Some(value) = self.symbols.get(symbol) {
+        if let Some(value) = self.symbols.borrow().get(symbol) {
             Ok(value.clone())
         } else if let Some(ref env) = self.outer_env {
             env.get(symbol)
@@ -26,11 +27,11 @@ impl Environment {
         }
     }
 
-    pub fn new(outer_env: Option<Box<Environment>>) -> Environment {
-        Environment { symbols: HashMap::new(), outer_env: outer_env }
+    pub fn new(outer_env: Option<Rc<Environment>>) -> Environment {
+        Environment { symbols: RefCell::new(HashMap::new()), outer_env: outer_env }
     }
 
-    pub fn with_bindings(outer_env: Option<Box<Environment>>, binds: Vec<LispType>, exprs: Vec<LispType>) -> Result<Environment, LispError> {
+    pub fn with_bindings(outer_env: Option<Rc<Environment>>, binds: Vec<LispType>, exprs: Vec<LispType>) -> Result<Environment, LispError> {
         let mut symbols = HashMap::with_capacity(binds.len());
         let mut binds_it = binds.into_iter();
         let mut exprs_it = exprs.into_iter();
@@ -62,6 +63,6 @@ impl Environment {
             }
         }
 
-        Ok(Environment { symbols: symbols, outer_env: outer_env })
+        Ok(Environment { symbols: RefCell::new(symbols), outer_env: outer_env })
     }
 }

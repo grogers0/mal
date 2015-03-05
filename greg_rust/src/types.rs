@@ -1,4 +1,5 @@
 use std::fmt;
+use std::rc::Rc;
 
 use types::LispType::*;
 use env::Environment;
@@ -20,7 +21,7 @@ pub enum LispType {
     List(Vec<LispType>),
     Vector(Vec<LispType>),
     Func(fn(Vec<LispType>) -> LispResult),
-    Closure(Vec<LispType>, Box<LispType>, Environment)
+    Closure(Vec<LispType>, Box<LispType>, Rc<Environment>)
 }
 
 impl PartialEq for LispType {
