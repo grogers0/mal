@@ -10,6 +10,12 @@ PYTHON = python
 # Settings
 #
 
+all:
+	$(MAKE) -C greg_rust $@
+
+clean:
+	$(MAKE) -C greg_rust $@
+
 IMPLS = bash c clojure coffee cs forth go haskell java js lua make mal \
 	ocaml matlab miniMAL perl php ps python r racket ruby rust \
 	scala vb greg_rust
