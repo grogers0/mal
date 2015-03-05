@@ -1,6 +1,7 @@
 use std::fmt;
 
 use types::LispType::*;
+use env::Environment;
 
 #[derive(Debug)]
 pub struct LispError(pub String);
@@ -18,7 +19,7 @@ pub enum LispType {
     List(Vec<LispType>),
     Vector(Vec<LispType>),
     Func(fn(Vec<LispType>) -> LispResult),
-    Closure(Vec<LispType>, Box<LispType>)
+    Closure(Vec<LispType>, Box<LispType>, Environment)
 }
 
 impl PartialEq for LispType {
@@ -38,6 +39,12 @@ impl PartialEq for LispType {
 }
 
 impl fmt::Display for LispType {
+    fn fmt(&self, out: &mut fmt::Formatter) -> fmt::Result {
+        out.write_str(&pr_str(self, false))
+    }
+}
+
+impl fmt::Debug for LispType {
     fn fmt(&self, out: &mut fmt::Formatter) -> fmt::Result {
         out.write_str(&pr_str(self, false))
     }
@@ -76,6 +83,6 @@ pub fn pr_str(val: &LispType, print_readably: bool) -> String {
             buf
         },
         &Func(_) => "#<function ...>".to_string(),
-        &Closure(_,_) => "#<function ...>".to_string()
+        &Closure(_,_,_) => "#<function ...>".to_string()
     }
 }

@@ -65,7 +65,7 @@ fn eval(ast: LispType, env: &mut Environment) -> LispResult {
                 _ => Err(LispError("def! must be called with 2 args, a symbol and a value".to_string())),
             }
         } else if arg0 == Symbol("let*".to_string()) {
-            let mut let_env = Environment::new(Some(env));
+            let mut let_env = Environment::new(Some(Box::new(env.clone())));
             let mut args_iter = args.into_iter();
             match (args_iter.next(), args_iter.next(), args_iter.next()) {
                 (Some(List(bindings)), Some(val), None) | (Some(Vector(bindings)), Some(val), None) => {
@@ -103,21 +103,12 @@ fn eval(ast: LispType, env: &mut Environment) -> LispResult {
             let mut args_iter = args.into_iter();
             match (args_iter.next(), args_iter.next(), args_iter.next()) {
                 (Some(List(args)), Some(val), None) | (Some(Vector(args)), Some(val), None) => {
-                    Ok(Closure(args, Box::new(val)))
+                    Ok(Closure(args, Box::new(val), env.clone()))
                 },
                 _ => Err(LispError("fn* must be called with a binding list and an expression".to_string()))
             }
-        } else if let List(maybe_fn_def) = arg0 {
-            // FIXME
-            let arg0 = try!(eval(List(maybe_fn_def), env));
-            let mut resolved_args = Vec::with_capacity(1 + args.len());
-            resolved_args.push(arg0);
-            for arg in args {
-                resolved_args.push(arg)
-            }
-            eval(List(resolved_args), env)
         } else {
-            match try!(eval_ast(arg0, env)) {
+            match try!(eval(arg0, env)) {
                 Func(func) => {
                     if let List(args) = try!(eval_ast(List(args), env)) {
                         func(args)
@@ -125,9 +116,13 @@ fn eval(ast: LispType, env: &mut Environment) -> LispResult {
                         unreachable!()
                     }
                 },
-                Closure(bindings, expr) => {
-                    let mut env = try!(Environment::with_bindings(Some(env), bindings, args));
-                    eval(*expr, &mut env)
+                Closure(bindings, expr, closure_env) => {
+                    if let List(args) = try!(eval_ast(List(args), env)) {
+                        let mut closure_env = try!(Environment::with_bindings(Some(Box::new(closure_env)), bindings, args));
+                        eval(*expr, &mut closure_env)
+                    } else {
+                        unreachable!()
+                    }
                 },
                 misunderstood => return Err(LispError(format!("{} is not a function, cannot evaluate it", misunderstood)))
             }
@@ -155,6 +150,7 @@ fn rep(input: &str, env: &mut Environment) -> String {
 
 fn main() {
     let mut env = core::default_environment();
+    rep("(def! not (fn* (a) (if a false true)))", &mut env);
     loop {
         match readline::readline("user> ") {
             Some(line) => {

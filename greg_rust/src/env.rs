@@ -1,15 +1,17 @@
 #![allow(dead_code)]
 
 use std::collections::HashMap;
+use std::iter::FromIterator;
 
 use types::{LispType, LispError, LispResult};
 use types::LispType::*;
 
-pub struct Environment<'a> {
+#[derive(Debug, Clone)]
+pub struct Environment {
     symbols: HashMap<String, LispType>,
-    outer_env: Option<&'a Environment<'a>>
+    outer_env: Option<Box<Environment>>
 }
-impl<'a> Environment<'a> {
+impl Environment {
     pub fn set(&mut self, symbol: &str, value: LispType) {
         self.symbols.insert(symbol.to_string(), value);
     }
@@ -24,20 +26,39 @@ impl<'a> Environment<'a> {
         }
     }
 
-    pub fn new(outer_env: Option<&'a Environment>) -> Environment<'a> {
+    pub fn new(outer_env: Option<Box<Environment>>) -> Environment {
         Environment { symbols: HashMap::new(), outer_env: outer_env }
     }
 
-    pub fn with_bindings(outer_env: Option<&'a Environment>, binds: Vec<LispType>, exprs: Vec<LispType>) -> Result<Environment<'a>, LispError> {
+    pub fn with_bindings(outer_env: Option<Box<Environment>>, binds: Vec<LispType>, exprs: Vec<LispType>) -> Result<Environment, LispError> {
         let mut symbols = HashMap::with_capacity(binds.len());
-        if binds.len() != exprs.len() {
-            return Err(LispError("incorrect number of arguments passed to a closure".to_string()))
-        }
-        for (bind, value) in binds.into_iter().zip(exprs.into_iter()) {
-            if let Symbol(sym) = bind {
-                symbols.insert(sym, value);
-            } else {
-                return Err(LispError("function binding is not a symbol".to_string()))
+        let mut binds_it = binds.into_iter();
+        let mut exprs_it = exprs.into_iter();
+
+        loop {
+            match binds_it.next() {
+                Some(Symbol(sym)) => {
+                    if sym == "&" {
+                        if let Some(Symbol(more)) = binds_it.next() {
+                            symbols.insert(more, List(Vec::from_iter(exprs_it)));
+                            break;
+                        } else {
+                            return Err(LispError("binding after & must be a symbol".to_string()))
+                        }
+                    } else if let Some(value) = exprs_it.next() {
+                        symbols.insert(sym, value);
+                    } else {
+                        return Err(LispError("Closure called with incorrect number of arguments".to_string()));
+                    }
+                },
+                Some(_) => return Err(LispError("Closure with non-symbol bindings".to_string())),
+                None => {
+                    if let Some(_) = exprs_it.next() {
+                        return Err(LispError("Closure called with incorrect number of arguments".to_string()));
+                    } else {
+                        break;
+                    }
+                }
             }
         }
 

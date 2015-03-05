@@ -65,7 +65,7 @@ fn eval(ast: LispType, env: &mut Environment) -> LispResult {
                 _ => Err(LispError("def! must be called with 2 args, a symbol and a value".to_string())),
             }
         } else if arg0 == Symbol("let*".to_string()) {
-            let mut let_env = Environment::new(Some(env));
+            let mut let_env = Environment::new(Some(Box::new(env.clone())));
             let mut args_iter = args.into_iter();
             if let Some(List(bindings)) = args_iter.next() {
                 try!(set_bindings(bindings, &mut let_env));

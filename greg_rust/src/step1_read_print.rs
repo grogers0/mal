@@ -7,6 +7,7 @@ use types::LispType;
 
 mod reader;
 mod types;
+mod env;
 
 fn read(input: &str) -> reader::ParseResult {
     reader::read_str(input)

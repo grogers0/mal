@@ -3,7 +3,7 @@ use types::{LispType, LispResult, LispError};
 use types::LispType::*;
 use env::Environment;
 
-pub fn default_environment<'a>() -> Environment<'a> {
+pub fn default_environment() -> Environment {
     let mut env = Environment::new(None);
     env.set("+", Func(add));
     env.set("-", Func(sub));
