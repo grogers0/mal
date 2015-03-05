@@ -1,6 +1,7 @@
+use std::result::Result;
+
 use types::LispType;
 use types::LispType::*;
-use std::result::Result;
 
 #[derive(Debug)]
 pub struct ParseError(String);
@@ -97,7 +98,26 @@ fn read_atom(reader: &mut Reader) -> ParseResult {
     } else if let Ok(int) = token.parse::<i64>() {
         Ok(Integer(int))
     } else if let Some('"') = token.chars().next() {
-        Ok(Str(token.to_string()))
+        let mut chars = token.chars();
+        chars.next(); // skip leading "
+        let mut buf = String::new();
+        loop {
+            match chars.next() {
+                Some('\\') => match chars.next() {
+                    Some('"') => buf.push('"'),
+                    Some('\\') => buf.push('\\'),
+                    Some('r') => buf.push('\r'),
+                    Some('n') => buf.push('\n'),
+                    Some('t') => buf.push('\t'),
+                    Some(c) => { buf.push('\\'); buf.push(c); },
+                    None => unreachable!()
+                },
+                Some(c) => buf.push(c),
+                None => break
+            }
+        }
+        buf.pop(); // remove trailing "
+        Ok(Str(buf))
     } else if let Some(':') = token.chars().next() {
         Ok(Keyword(token.to_string()))
     } else {

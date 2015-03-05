@@ -53,7 +53,7 @@ impl fmt::Display for LispType {
 
 impl fmt::Debug for LispType {
     fn fmt(&self, out: &mut fmt::Formatter) -> fmt::Result {
-        out.write_str(&pr_str(self, false))
+        out.write_str(&pr_str(self, true))
     }
 }
 
@@ -64,7 +64,24 @@ pub fn pr_str(val: &LispType, print_readably: bool) -> String {
         &False => "false".to_string(),
         &Integer(int) => int.to_string(),
         &Symbol(ref sym) => sym.clone(),
-        &Str(ref s) => s.clone(), // quotes are included
+        &Str(ref s) => if print_readably {
+            let mut buf = String::new();
+            buf.push('"');
+            for c in s.chars() {
+                match c {
+                    '"' => buf.push_str("\\\""),
+                    '\\' => buf.push_str("\\\\"),
+                    '\r' => buf.push_str("\\r"),
+                    '\n' => buf.push_str("\\n"),
+                    '\t' => buf.push_str("\\t"),
+                    c => buf.push(c)
+                }
+            }
+            buf.push('"');
+            buf
+        } else {
+            s.clone()
+        },
         &Keyword(ref s) => s.clone(),
         &List(ref elems) => {
             let mut buf = String::new();
