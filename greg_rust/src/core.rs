@@ -76,7 +76,7 @@ fn is_list(args: Vec<LispType>) -> LispResult {
 fn is_empty(args: Vec<LispType>) -> LispResult {
     for arg in args {
         match arg {
-            List(elems) => if !elems.is_empty() { return Ok(False) },
+            List(elems) | Vector(elems) => if !elems.is_empty() { return Ok(False) },
             _ => return Err(LispError(format!("argument {} is not a list", arg)))
         }
     }
@@ -88,7 +88,7 @@ fn count(args: Vec<LispType>) -> LispResult {
     for arg in args {
         match arg {
             Nil => (),
-            List(elems) => count += elems.len() as i64,
+            List(elems) | Vector(elems) => count += elems.len() as i64,
             _ => return Err(LispError(format!("argument {} is not a list", arg)))
         }
     }

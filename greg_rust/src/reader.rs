@@ -98,6 +98,8 @@ fn read_atom(reader: &mut Reader) -> ParseResult {
         Ok(Integer(int))
     } else if let Some('"') = token.chars().next() {
         Ok(Str(token.to_string()))
+    } else if let Some(':') = token.chars().next() {
+        Ok(Keyword(token.to_string()))
     } else {
         Ok(Symbol(token.to_string()))
     }

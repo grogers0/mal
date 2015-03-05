@@ -16,6 +16,7 @@ pub enum LispType {
     Integer(i64),
     Symbol(String),
     Str(String),
+    Keyword(String),
     List(Vec<LispType>),
     Vector(Vec<LispType>),
     Func(fn(Vec<LispType>) -> LispResult),
@@ -28,11 +29,16 @@ impl PartialEq for LispType {
             (&Nil, &Nil) => true,
             (&True, &True) => true,
             (&False, &False) => true,
-            (&Integer(ref a), &Integer(ref b)) if a == b => true,
-            (&Symbol(ref a), &Symbol(ref b)) if a == b => true,
-            (&Str(ref a), &Str(ref b)) if a == b => true,
-            (&List(ref a), &List(ref b)) if a == b => true,
-            // Functions are not comparable
+            (&Integer(ref a), &Integer(ref b)) => a == b,
+            (&Symbol(ref a), &Symbol(ref b)) => a == b,
+            (&Str(ref a), &Str(ref b)) => a == b,
+            (&Keyword(ref a), &Keyword(ref b)) => a == b,
+            (&List(ref a), &List(ref b)) => a == b,
+            (&List(ref a), &Vector(ref b)) => a == b,
+            (&Vector(ref a), &Vector(ref b)) => a == b,
+            (&Vector(ref a), &List(ref b)) => a == b,
+            (&Func(_), &Func(_)) => false,
+            (&Closure(_,_,_), &Closure(_,_,_)) => false,
             _ => false
         }
     }
@@ -58,6 +64,7 @@ pub fn pr_str(val: &LispType, print_readably: bool) -> String {
         &Integer(int) => int.to_string(),
         &Symbol(ref sym) => sym.clone(),
         &Str(ref s) => s.clone(), // quotes are included
+        &Keyword(ref s) => s.clone(),
         &List(ref elems) => {
             let mut buf = String::new();
             buf.push('(');
