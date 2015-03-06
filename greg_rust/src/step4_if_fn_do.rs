@@ -1,4 +1,4 @@
-#![feature(core, plugin, collections)]
+#![feature(plugin, collections)]
 #![plugin(regex_macros)]
 extern crate regex;
 extern crate readline;
