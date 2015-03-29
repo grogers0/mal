@@ -133,8 +133,10 @@ fn eval(mut ast: LispType, mut env: Rc<Environment>) -> LispResult {
                     },
                     Closure(bindings, expr, closure_env) => {
                         if let List(args) = try!(eval_ast(List(args), env)) {
-                            let closure_env = try!(Environment::with_bindings(Some(closure_env.clone()), bindings, args));
-                            eval(*expr, Rc::new(closure_env))
+                            let closure_env = Rc::new(try!(Environment::with_bindings(Some(closure_env.clone()), bindings, args)));
+                            env = closure_env;
+                            ast = *expr;
+                            continue;
                         } else {
                             unreachable!()
                         }
