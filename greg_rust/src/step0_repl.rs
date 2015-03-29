@@ -1,5 +1,8 @@
 extern crate readline;
 
+use std::str;
+use std::ffi::CString;
+
 fn read(input: &str) -> &str {
     input
 }
@@ -17,13 +20,14 @@ fn rep(input: &str) -> &str {
 }
 
 fn main() {
+    let prompt = &CString::new("user> ").unwrap();
     loop {
-        match readline::readline("user> ") {
-            Some(line) => {
-                println!("{}", rep(&line));
+        match readline::readline(prompt) {
+            Ok(line) => {
+                println!("{}", rep(str::from_utf8(line.to_bytes()).unwrap()));
                 readline::add_history(&line);
             },
-            None => return
+            Err(_) => return
         }
     }
 }

@@ -4,6 +4,8 @@ extern crate regex;
 extern crate readline;
 
 use std::rc::Rc;
+use std::str;
+use std::ffi::CString;
 
 use types::{LispType, LispError, LispResult};
 use types::LispType::*;
@@ -153,13 +155,14 @@ fn rep(input: &str, env: Rc<Environment>) -> String {
 fn main() {
     let env = core::default_environment();
     rep("(def! not (fn* (a) (if a false true)))", env.clone());
+    let prompt = &CString::new("user> ").unwrap();
     loop {
-        match readline::readline("user> ") {
-            Some(line) => {
-                println!("{}", rep(&line, env.clone()));
+        match readline::readline(prompt) {
+            Ok(line) => {
+                println!("{}", rep(str::from_utf8(line.to_bytes()).unwrap(), env.clone()));
                 readline::add_history(&line);
             },
-            None => return
+            Err(_) => return
         }
     }
 }
