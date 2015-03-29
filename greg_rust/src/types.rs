@@ -47,7 +47,7 @@ impl PartialEq for LispType {
 
 impl fmt::Display for LispType {
     fn fmt(&self, out: &mut fmt::Formatter) -> fmt::Result {
-        out.write_str(&pr_str(self, false))
+        out.write_str(&pr_str(self, true))
     }
 }
 
